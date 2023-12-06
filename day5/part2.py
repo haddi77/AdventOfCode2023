@@ -1,39 +1,125 @@
 
 lines = open('input.txt', 'r', encoding='utf8')
 
-cards = {}
+seeds = set()
+locations = set()
+seed2soil = set()
+soil2fert = set()
+fert2water = set()
+water2light = set()
+light2temp = set()
+temp2humidity = set()
+humidity2location = set()
 
-cards_sum = 0
+active_set = None
 
-points_sum = 0
+for line in lines:
+    line = line.strip()
 
-while lines:
-    line = lines.readline().strip()
     if line == '':
-        break
+        continue
 
-    card_no, numbers = line.split(': ')
-    card_no = int(card_no.replace('Card ', ''))
-    if card_no in cards.keys():
-        cards[card_no] += 1
-    else:
-        cards[card_no] = 1
+    if line[0:6] == 'seeds:':
+        seeds_list = line.split(': ')[1].split()
 
-    cards_sum += cards[card_no]
+        start_seed = None
+        count = 0
+        for entry in seeds_list:
+            count += 1
+            if count % 2 != 0:
+                start_seed = entry
+                continue
 
-    winning_nos, drawn_nos = numbers.split(' | ')
+            seeds.add((int(start_seed), int(entry)))
+        continue
 
-    winning_nos = set(winning_nos.split())
-    drawn_nos = set(drawn_nos.split())
-    won_nos = drawn_nos.intersection(winning_nos)
-    how_many_cards = len(won_nos)
-    multiplier = cards[card_no]
+    if line == 'seed-to-soil map:':
+        active_set = seed2soil
+        continue
 
-    for count_cards in range(1, how_many_cards + 1):
-        if card_no + count_cards in cards.keys():
-            cards[card_no + count_cards] += multiplier
-        else:
-            cards[card_no + count_cards] = multiplier
+    if line == 'soil-to-fertilizer map:':
+        active_set = soil2fert
+        continue
 
+    if line == 'fertilizer-to-water map:':
+        active_set = fert2water
+        continue
 
-print(cards_sum)
+    if line == 'water-to-light map:':
+        active_set = water2light
+        continue
+
+    if line == 'light-to-temperature map:':
+        active_set = light2temp
+        continue
+
+    if line == 'temperature-to-humidity map:':
+        active_set = temp2humidity
+        continue
+
+    if line == 'humidity-to-location map:':
+        active_set = humidity2location
+        continue
+
+    dst_start, src_start, map_range = line.split()
+
+    active_set.add(
+        (
+            int(src_start),
+            int(src_start) + int(map_range) + 1,
+            int(dst_start) - int(src_start)
+        )
+    )
+
+for start_and_range in seeds:
+    start_seed = start_and_range[0]
+    end_seed = start_seed + start_and_range[1] + 1
+
+    for seed in range(start_seed, end_seed):
+
+        soil = seed
+        for seedmap in seed2soil:
+            if seed in range(seedmap[0], seedmap[1]):
+                soil = seed + seedmap[2]
+                break
+
+        fert = soil
+        for soilmap in soil2fert:
+            if soil in range(soilmap[0], soilmap[1]):
+                fert = soil + soilmap[2]
+                break
+
+        water = fert
+        for fertmap in fert2water:
+            if fert in range(fertmap[0], fertmap[1]):
+                water = fert + fertmap[2]
+                break
+
+        light = water
+        for watermap in water2light:
+            if water in range(watermap[0], watermap[1]):
+                light = water + watermap[2]
+                break
+
+        temp = light
+        for lightmap in light2temp:
+            if light in range(lightmap[0], lightmap[1]):
+                temp = light + lightmap[2]
+                break
+
+        humidity = temp
+        for tempmap in temp2humidity:
+            if temp in range(tempmap[0], tempmap[1]):
+                humidity = temp + tempmap[2]
+                break
+
+        location = humidity
+        for humiditymap in humidity2location:
+            if humidity in range(humiditymap[0], humiditymap[1]):
+                location = humidity + humiditymap[2]
+                break
+
+        locations.add(location)
+
+print(f'The lowest possible location number is: {min(locations)}')
+print('')
